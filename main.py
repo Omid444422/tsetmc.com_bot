@@ -204,6 +204,30 @@ elif int(user_input) == 2:
                 legal_sell_avg = driver.find_element(By.CSS_SELECTOR,'td#ct19').text
 
                 change_owner_from_legal_to_people = driver.find_element(By.CSS_SELECTOR,'td#ct20').text
+                
+                # تب معاملات
+
+                volume_price_tab_button = driver.find_element(By.CSS_SELECTOR,'#root > div > div:nth-child(3) > div.menuHolder2.zFull > ul > li:nth-child(2) > a')
+                volume_price_tab_button.click()
+
+                sleep(2)
+
+                selected_date = driver.find_element(By.XPATH,'//*[@id="MainBox"]/div[1]/span[3]').text
+                transactions_list = list()
+
+                company_url_data = driver.current_url.split('/')
+                company_id = company_url_data[4]
+                company_history_id = company_url_data[5]
+                
+                headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+                history_response = get(HISTORY_API_URL.replace('COMPANY_ID',company_id).replace('HISTORY_ID',company_history_id),headers=headers).json()
+
+
+                histories = history_response
+
+                for single_history in histories['tradeHistory']:
+                
+                    transactions_list.append({'date':selected_date,'transaction_id':single_history['nTran'],'transaction_time':single_history['hEven'],"transaction_volume":single_history['qTitTran'],'transaction_price':single_history['pTran']})
 
                 company_history_data['histroy_date_info'].append({
                     'transactions_count':transactions_count
@@ -233,34 +257,7 @@ elif int(user_input) == 2:
                     'leagal_sell_count':leagal_sell_count,
                     'legal_sell_volume':legal_sell_volume,
                     'legal_sell_avg':legal_sell_avg,
-                    'change_owner_from_legal_to_people':change_owner_from_legal_to_people,'transactions_data':None})
-                
-                # تب معاملات
-
-                volume_price_tab_button = driver.find_element(By.CSS_SELECTOR,'#root > div > div:nth-child(3) > div.menuHolder2.zFull > ul > li:nth-child(2) > a')
-                volume_price_tab_button.click()
-
-                sleep(2)
-
-                selected_date = driver.find_element(By.XPATH,'//*[@id="MainBox"]/div[1]/span[3]').text
-                transactions_list = list()
-
-                company_url_data = driver.current_url.split('/')
-                company_id = company_url_data[4]
-                company_history_id = company_url_data[5]
-                
-                headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
-                history_response = get(HISTORY_API_URL.replace('COMPANY_ID',company_id).replace('HISTORY_ID',company_history_id),headers=headers).json()
-
-
-                histories = history_response
-
-                for single_history in histories['tradeHistory']:
-                
-                    transactions_list.append({'date':selected_date,'transaction_id':single_history['nTran'],'transaction_time':single_history['hEven'],"transaction_volume":single_history['qTitTran'],'transaction_price':single_history['pTran']})
-
-
-            company_history_data['histroy_date_info'][-1]['transactions_data'] = transactions_list
+                    'change_owner_from_legal_to_people':change_owner_from_legal_to_people,'transactions_data':transactions_list})
 
             company_history_json = dumps(company_history_data,ensure_ascii=False)
 
