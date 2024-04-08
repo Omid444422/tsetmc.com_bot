@@ -33,14 +33,34 @@ elif int(user_input) == 2:
     print('enter count here: ')
     company_days = input(' ')
 
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+
+    if not company_names:
+        read_file_name = glob('*.txt')
+        if read_file_name:
+            txt_file = open(read_file_name[0],'r',encoding='utf-8')
+            company_names = ','.join(txt_file.readlines())
+        else:
+            driver.get(BASE_URL+'Loader.aspx?ParTree=15131F')
+            sleep(15)
+
+            companies = driver.find_elements(By.CSS_SELECTOR,'a.inst')
+
+            for single_company in companies:
+               try:
+                    driver.execute_script("arguments[0].scrollIntoView();", single_company)
+                    company_names += single_company.text + ','
+               except:
+                   print('skip')
+                   continue
+         
     company_list = company_names.split(',')
 
     complete_company_data = list()
-    company_history_data = {'data':None,'histroy_date_info':list()}
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    company_history_data = {'company_name':None,'data':None,'histroy_date_info':list()}
     
     for index,single_company in enumerate(company_list):
+        company_history_data = {'company_name':None,'data':None,'histroy_date_info':list()} 
         
         driver.get(BASE_URL)
 
@@ -62,6 +82,7 @@ elif int(user_input) == 2:
 
         for single_search in search_list:
             search_urls.append(single_search.find_element(By.XPATH,'.//div[1]/span/a').get_attribute('href'))
+            break # برای انتخاب فقط اولین جستجوی مرتبط
 
         for single_url in search_urls:
             driver.get(single_url)
@@ -74,11 +95,13 @@ elif int(user_input) == 2:
 
             PE = driver.find_element(By.CSS_SELECTOR,'td#d12').text
             PE_group = driver.find_element(By.CSS_SELECTOR,'#TopBox > div.box2.zi1 > div:nth-child(6) > table > tbody > tr:nth-child(1) > td:nth-child(6)').text
-            
 
             moon_volume_avg = driver.find_element(By.CSS_SELECTOR,'#TopBox > div.box2.zi1 > div:nth-child(4) > table > tbody > tr:nth-child(4) > td:nth-child(2) > div').get_attribute('title')
 
             floating_share = driver.find_element(By.CSS_SELECTOR,'#TopBox > div.box2.zi1 > div:nth-child(4) > table > tbody > tr:nth-child(3) > td:nth-child(2)').text
+
+            company_history_data['company_name'] = complete_company_name
+            company_history_data['data'] = {'pe':PE,'pe_group':PE_group,'moon_volume_avg':moon_volume_avg,'floating_share':floating_share}
 
             sleep(3)
 
@@ -180,7 +203,7 @@ elif int(user_input) == 2:
 
                 change_owner_from_legal_to_people = driver.find_element(By.CSS_SELECTOR,'td#ct20').text
 
-                company_history_data['data'] = {
+                company_history_data['histroy_date_info'].append({
                     'transactions_count':transactions_count
                     ,'transactions_volume':transactions_volume,
                     'transactions_value':transactions_value,
@@ -208,45 +231,44 @@ elif int(user_input) == 2:
                     'leagal_sell_count':leagal_sell_count,
                     'legal_sell_volume':legal_sell_volume,
                     'legal_sell_avg':legal_sell_avg,
-                    'change_owner_from_legal_to_people':change_owner_from_legal_to_people}
+                    'change_owner_from_legal_to_people':change_owner_from_legal_to_people,'transactions_data':None})
                 
-                # تب حجم قیمت
+                # تب معاملات
 
-                volume_price_tab_button = driver.find_element(By.CSS_SELECTOR,'#root > div > div:nth-child(3) > div.menuHolder2.zFull > ul > li:nth-child(3) > a')
+                volume_price_tab_button = driver.find_element(By.CSS_SELECTOR,'#root > div > div:nth-child(3) > div.menuHolder2.zFull > ul > li:nth-child(2) > a')
                 volume_price_tab_button.click()
 
                 sleep(2)
 
                 selected_date = driver.find_element(By.XPATH,'//*[@id="MainBox"]/div[1]/span[3]').text
+                transactions_list = list()
+               
 
-                company_dates_element_list = driver.find_elements(By.XPATH,'//*[@id="TradesContent"]/div/div/div[1]/div[2]/div[3]/div[2]/div/div/div[@role="row"]')
+                while int(driver.execute_script('return document.querySelector("#TradesContent > div > div > div.ag-root-wrapper-body.ag-layout-normal.ag-focus-managed > div.ag-root.ag-unselectable.ag-layout-normal > div.ag-body-viewport.ag-layout-normal.ag-row-no-animation").scrollTop')) < 3357:
 
+                    transactions = driver.find_elements(By.XPATH,'//*[@id="TradesContent"]/div/div/div[1]/div[2]/div[3]/div[2]/div/div/div')
 
-                for single_company_date in company_dates_element_list:
-                    
-                    try:
-                        first = single_company_date.find_element(By.XPATH,'.//div[1]').text
-                        last = single_company_date.find_element(By.XPATH,'.//div[2]').text
-                        volume = single_company_date.find_element(By.XPATH,'.//div[3]/span/tooltip').get_attribute('title')
-                        price = single_company_date.find_element(By.XPATH,'.//div[4]').text
-                    except:
-                        continue
-                    
-                    
+                    for single_transaction in transactions:
 
-                    company_history_data['histroy_date_info'].append({'date':selected_date,'first':first,'last':last,'volume':volume,'price':price})
+                        driver.execute_script('document.querySelector("#TradesContent > div > div > div.ag-root-wrapper-body.ag-layout-normal.ag-focus-managed > div.ag-root.ag-unselectable.ag-layout-normal > div.ag-body-viewport.ag-layout-normal.ag-row-no-animation").scrollBy(0,35)')
 
+                        sleep(3)
 
-            complete_company_data.append({'company_name':complete_company_name,'current_company_data':{'PE':PE,'PE_group':PE_group,'moon_volume_avg':moon_volume_avg},'history':company_history_data})
+                        try:
+                            single_transaction_id = single_transaction.find_element(By.XPATH,'.//div[1]/span').text
+                            single_transaction_time = single_transaction.find_element(By.XPATH,'.//div[2]').text
+                            single_transaction_volume = single_transaction.find_element(By.XPATH,'.//div[3]').text
+                            single_transaction_price = single_transaction.find_element(By.XPATH,'.//div[4]').text
+                        except:
+                            continue
 
-            complete_company_json = dumps(complete_company_data,ensure_ascii=False)
-
-            save_company_json_file = open(str(complete_company_name)+'.json','w',encoding='utf-8')
-            save_company_json_file.write(complete_company_json)
-            save_company_json_file.close()
+                        transactions_list.append({'date':selected_date,'transaction_id':single_transaction_id,'transaction_time':single_transaction_time,"transaction_volume":single_transaction_volume,'transaction_price':single_transaction_price})
 
 
-            
+            company_history_data['histroy_date_info'][-1]['transactions_data'] = transactions_list
 
-                    
-                    
+            company_history_json = dumps(company_history_data,ensure_ascii=False)
+
+            json_file = open(str(index)+'.json','w',encoding='utf-8')
+            json_file.write(company_history_json)
+            json_file.close()
