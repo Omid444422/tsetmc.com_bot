@@ -3,7 +3,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from json import dumps,loads
+from json import dumps
 from time import sleep
 from sys import exit
 from glob import glob
@@ -33,7 +33,9 @@ elif int(user_input) == 2:
     print('enter companies name here: ')
     company_names = input(' ')
     print('enter count here: ')
-    company_days = input(' ')
+    company_days = int(input(' ')) - 1
+
+    counter = 0
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
@@ -259,8 +261,10 @@ elif int(user_input) == 2:
                     'legal_sell_avg':legal_sell_avg,
                     'change_owner_from_legal_to_people':change_owner_from_legal_to_people,'transactions_data':transactions_list})
 
-            company_history_json = dumps(company_history_data,ensure_ascii=False)
+                company_history_json = dumps(company_history_data,ensure_ascii=False)
 
-            json_file = open(str(index)+'.json','w',encoding='utf-8')
+            json_file = open(str(counter)+'.json','w',encoding='utf-8')
             json_file.write(company_history_json)
             json_file.close()
+
+            counter += 1
