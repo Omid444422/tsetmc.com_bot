@@ -3,12 +3,14 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from json import dumps
+from json import dumps,loads
 from time import sleep
 from sys import exit
 from glob import glob
+from requests import get
 
 BASE_URL = 'https://www.tsetmc.com/'
+HISTORY_API_URL = 'https://cdn.tsetmc.com/api/Trade/GetTradeHistory/COMPANY_ID/HISTORY_ID/false'
 
 print('choose mode:')
 print('='*100)
@@ -42,7 +44,7 @@ elif int(user_input) == 2:
             company_names = ','.join(txt_file.readlines())
         else:
             driver.get(BASE_URL+'Loader.aspx?ParTree=15131F')
-            sleep(15)
+            sleep(7)
 
             companies = driver.find_elements(By.CSS_SELECTOR,'a.inst')
 
@@ -242,27 +244,20 @@ elif int(user_input) == 2:
 
                 selected_date = driver.find_element(By.XPATH,'//*[@id="MainBox"]/div[1]/span[3]').text
                 transactions_list = list()
-               
 
-                while int(driver.execute_script('return document.querySelector("#TradesContent > div > div > div.ag-root-wrapper-body.ag-layout-normal.ag-focus-managed > div.ag-root.ag-unselectable.ag-layout-normal > div.ag-body-viewport.ag-layout-normal.ag-row-no-animation").scrollTop')) < 3357:
+                company_url_data = driver.current_url.split('/')
+                company_id = company_url_data[4]
+                company_history_id = company_url_data[5]
+                
+                headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+                history_response = get(HISTORY_API_URL.replace('COMPANY_ID',company_id).replace('HISTORY_ID',company_history_id),headers=headers).json()
 
-                    transactions = driver.find_elements(By.XPATH,'//*[@id="TradesContent"]/div/div/div[1]/div[2]/div[3]/div[2]/div/div/div')
 
-                    for single_transaction in transactions:
+                histories = history_response
 
-                        driver.execute_script('document.querySelector("#TradesContent > div > div > div.ag-root-wrapper-body.ag-layout-normal.ag-focus-managed > div.ag-root.ag-unselectable.ag-layout-normal > div.ag-body-viewport.ag-layout-normal.ag-row-no-animation").scrollBy(0,35)')
-
-                        sleep(3)
-
-                        try:
-                            single_transaction_id = single_transaction.find_element(By.XPATH,'.//div[1]/span').text
-                            single_transaction_time = single_transaction.find_element(By.XPATH,'.//div[2]').text
-                            single_transaction_volume = single_transaction.find_element(By.XPATH,'.//div[3]').text
-                            single_transaction_price = single_transaction.find_element(By.XPATH,'.//div[4]').text
-                        except:
-                            continue
-
-                        transactions_list.append({'date':selected_date,'transaction_id':single_transaction_id,'transaction_time':single_transaction_time,"transaction_volume":single_transaction_volume,'transaction_price':single_transaction_price})
+                for single_history in histories['tradeHistory']:
+                
+                    transactions_list.append({'date':selected_date,'transaction_id':single_history['nTran'],'transaction_time':single_history['hEven'],"transaction_volume":single_history['qTitTran'],'transaction_price':single_history['pTran']})
 
 
             company_history_data['histroy_date_info'][-1]['transactions_data'] = transactions_list
