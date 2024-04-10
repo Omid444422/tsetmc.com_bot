@@ -85,8 +85,13 @@ elif int(user_input) == 2:
         search_urls = list()
 
         for single_search in search_list:
-            search_urls.append(single_search.find_element(By.XPATH,'.//div[1]/span/a').get_attribute('href'))
-            break # برای انتخاب فقط اولین جستجوی مرتبط
+                        
+            searched_company_data = single_search.find_element(By.XPATH,'.//div[1]/span/a')
+            searched_company_name = searched_company_data.text.split('-')
+
+            if searched_company_name[0].find(single_company) > -1:
+                search_urls.append(searched_company_data.get_attribute('href'))
+                break
 
         for single_url in search_urls:
             driver.get(single_url)
