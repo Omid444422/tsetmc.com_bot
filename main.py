@@ -89,7 +89,7 @@ elif int(user_input) == 2:
             searched_company_data = single_search.find_element(By.XPATH,'.//div[1]/span/a')
             searched_company_name = searched_company_data.text.split('-')
 
-            if searched_company_name[0].find(single_company) > -1:
+            if searched_company_name[0].find(single_company) > -1 or searched_company_data.text.find(single_company) > -1:
                 search_urls.append(searched_company_data.get_attribute('href'))
                 break
 
