@@ -48,12 +48,13 @@ elif int(user_input) == 2:
             driver.get(BASE_URL+'Loader.aspx?ParTree=15131F')
             sleep(7)
 
-            companies = driver.find_elements(By.CSS_SELECTOR,'a.inst')
+            companies = driver.find_elements(By.CSS_SELECTOR,'div[class="{c}"]')
 
             for single_company in companies:
                try:
                     driver.execute_script("arguments[0].scrollIntoView();", single_company)
-                    company_names += single_company.text + ','
+                    company_names += single_company.find_element(By.XPATH,'.//a[1]').text + ','
+                    continue
                except:
                    print('skip')
                    continue
@@ -89,7 +90,7 @@ elif int(user_input) == 2:
             searched_company_data = single_search.find_element(By.XPATH,'.//div[1]/span/a')
             searched_company_name = searched_company_data.text.split('-')
 
-            if searched_company_name[0].find(single_company) > -1 or searched_company_data.text.find(single_company) > -1:
+            if searched_company_name[0].find(single_company) > -1:
                 search_urls.append(searched_company_data.get_attribute('href'))
                 break
 
@@ -123,7 +124,7 @@ elif int(user_input) == 2:
 
             while len(company_histories_url) <= int(company_days):
 
-                sleep(2)
+                sleep(5)
 
                 company_histories = driver.find_elements(By.CSS_SELECTOR,'#HistoryContent > div > div.ag-theme-alpine > div > div > div.ag-root-wrapper-body.ag-layout-auto-height.ag-focus-managed > div.ag-root.ag-unselectable.ag-layout-auto-height > div.ag-body-viewport.ag-layout-auto-height.ag-row-no-animation > div.ag-pinned-right-cols-container div[role="row"]')
 
@@ -132,11 +133,8 @@ elif int(user_input) == 2:
                     url = single_history.find_element(By.XPATH,'.//div[1]/a').get_attribute('href')
                     company_histories_url.append(url)
 
-                try:
-                    next_page_button = driver.find_element(By.CSS_SELECTOR,'#ag-977 > span.ag-paging-page-summary-panel > div:nth-child(4)')
-                    next_page_button.click()
-                except:
-                    pass
+                next_page_button = driver.find_element(By.CSS_SELECTOR,'#HistoryContent > div > div.ag-theme-alpine > div > div > div.ag-root-wrapper-body.ag-layout-auto-height.ag-focus-managed + div > span.ag-paging-page-summary-panel > div:nth-child(4)')
+                next_page_button.click()
 
                 sleep(3)
 
@@ -171,7 +169,11 @@ elif int(user_input) == 2:
 
                 base_valume = driver.find_element(By.CSS_SELECTOR,'#MainContent > div:nth-child(1) > div.box2.z2_4.h250 > div.box4.z1_4.h60 > table > tr:nth-child(2) > td:nth-child(2)').get_attribute('title')
 
-                market_value = driver.find_element(By.CSS_SELECTOR,'#MainContent > div:nth-child(1) > div.box2.z2_4.h250 > div.box4.z1_4.h60 > table > tr:nth-child(3) > td:nth-child(2)').get_attribute('title')
+                try:
+
+                    market_value = driver.find_element(By.CSS_SELECTOR,'#MainContent > div:nth-child(1) > div.box2.z2_4.h250 > div.box4.z1_4.h60 > table > tr:nth-child(3) > td:nth-child(2)').get_attribute('title')
+                except:
+                    market_value = 0
 
                 real_people_count = driver.find_element(By.CSS_SELECTOR,'#clientType > tr:nth-child(2) > td:nth-child(2) span').text
 
@@ -268,8 +270,8 @@ elif int(user_input) == 2:
 
                 company_history_json = dumps(company_history_data,ensure_ascii=False)
 
-            json_file = open(str(counter)+'.json','w',encoding='utf-8')
-            json_file.write(company_history_json)
-            json_file.close()
+        json_file = open(str(counter)+'.json','w',encoding='utf-8')
+        json_file.write(company_history_json)
+        json_file.close()
 
-            counter += 1
+        counter += 1
