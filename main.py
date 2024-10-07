@@ -37,7 +37,9 @@ elif int(user_input) == 2:
 
     counter = 0
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    options = Options()
+    options.add_argument('--start-maximized')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
 
     if not company_names:
         read_file_name = glob('*.txt')
